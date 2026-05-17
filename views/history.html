@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat History - Bitfast Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        .dashboard {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+            height: 80vh;
+            margin-top: 2rem;
+        }
+
+        .sidebar {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            color: var(--accent-color);
+        }
+
+        .user-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .user-item {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .user-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--glass-border);
+        }
+
+        .user-item.active {
+            background: var(--accent-color);
+            color: var(--bg-color);
+        }
+
+        .user-item .name {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .user-item .time {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        .chat-view {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .chat-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 1rem;
+            border-radius: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .message.user {
+            align-self: flex-start;
+            background: #1e293b;
+            border-bottom-left-radius: 0;
+            border: 1px solid var(--glass-border);
+        }
+
+        .message.bot {
+            align-self: flex-end;
+            background: var(--accent-color);
+            color: var(--bg-color);
+            border-bottom-right-radius: 0;
+        }
+
+        .message .meta {
+            font-size: 0.7rem;
+            margin-top: 0.5rem;
+            opacity: 0.6;
+            display: block;
+        }
+
+        .nav-link {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            opacity: 0.5;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <a href="/" class="nav-brand">WABOT Dashboard</a>
+        <div class="nav-links">
+            <a href="/">QR Login</a>
+            <a href="/history.html" class="active">History</a>
+            <a href="/users">Users</a>
+            <a href="/settings">Settings</a>
+            <a href="/logout" class="logout-link">Logout</a>
+        </div>
+    </nav>
+    <div class="main-content" style="max-width: 1200px; margin: 0 auto; display: block; width: 100%;">
+
+        <header>
+            <h1>Chat <span class="accent">History</span></h1>
+            <p class="subtitle">Monitor and review all customer interactions</p>
+        </header>
+
+        <div class="dashboard">
+            <aside class="sidebar">
+                <h2>Active Chats</h2>
+                <div id="user-list" class="user-list">
+                    <div class="empty-state">Loading users...</div>
+                </div>
+            </aside>
+
+            <main class="chat-view">
+                <div id="chat-header" class="chat-header">
+                    <h3 id="current-user">Select a conversation</h3>
+                </div>
+                <div id="chat-messages" class="chat-messages">
+                    <div class="empty-state">
+                        <p>Select a chat from the sidebar to view history</p>
+                    </div>
+                </div>
+                <div id="reply-box" class="chat-footer"
+                    style="padding: 1rem; border-top: 1px solid var(--glass-border); display: none; gap: 0.75rem; align-items: center;">
+                    <button id="btn-start-chat" onclick="startChat()" class="btn btn-primary"
+                        style="padding: 0.75rem 1.5rem;">Start Chat</button>
+
+                    <div id="agent-controls" style="display: none; flex: 1; gap: 0.75rem; align-items: center;">
+                        <input type="text" id="reply-input" placeholder="Type a message..."
+                            style="flex: 1; padding: 0.75rem; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 0.75rem; color: white;">
+                        <button onclick="sendReply()" class="btn btn-primary"
+                            style="padding: 0.75rem 1.5rem;">Send</button>
+                        <button onclick="closeToBot()" class="btn btn-danger" style="padding: 0.75rem 1.5rem;">Close to
+                            Bot</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const userListEl = document.getElementById('user-list');
+        const chatMessagesEl = document.getElementById('chat-messages');
+        const currentUserEl = document.getElementById('current-user');
+
+        let currentChatId = null;
+
+        async function loadUsers() {
+            try {
+                const res = await fetch('/api/history');
+                const users = await res.json();
+
+                if (users.length === 0) {
+                    userListEl.innerHTML = '<div class="empty-state">No history found</div>';
+                    return;
+                }
+
+                userListEl.innerHTML = users.map(user => `
+                    <div class="user-item" onclick="loadChat('${user.id}', '${user.name}')">
+                        <span class="name">${user.name}</span>
+                        <span class="time">${new Date(user.lastActive).toLocaleString()}</span>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Failed to load users:', err);
+            }
+        }
+
+        async function loadChat(userId, name) {
+            currentChatId = userId;
+            // Update active state
+            document.querySelectorAll('.user-item').forEach(el => {
+                el.classList.toggle('active', el.querySelector('.name').innerText === name);
+            });
+
+            currentUserEl.innerText = `Chat with ${name}`;
+            chatMessagesEl.innerHTML = '<div class="empty-state">Loading messages...</div>';
+            document.getElementById('reply-box').style.display = 'flex';
+
+            try {
+                const res = await fetch(`/api/history/${userId}`);
+                const messages = await res.json();
+
+                chatMessagesEl.innerHTML = messages.map(msg => `
+                    <div class="message ${msg.role === 'user' ? 'user' : 'bot'}">
+                        <div class="content">${msg.content.replace(/\n/g, '<br>')}</div>
+                        <span class="meta">${new Date(msg.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                `).join('');
+
+                chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+
+                // Fetch mode status
+                const statusRes = await fetch(`/api/chat/status/${userId}`);
+                const statusData = await statusRes.json();
+                updateChatUI(statusData.mode);
+
+            } catch (err) {
+                console.error('Failed to load chat:', err);
+                chatMessagesEl.innerHTML = '<div class="empty-state">Error loading messages</div>';
+            }
+        }
+
+        function updateChatUI(mode) {
+            const startBtn = document.getElementById('btn-start-chat');
+            const agentControls = document.getElementById('agent-controls');
+
+            if (mode === 'agen') {
+                startBtn.style.display = 'none';
+                agentControls.style.display = 'flex';
+            } else {
+                startBtn.style.display = 'block';
+                agentControls.style.display = 'none';
+            }
+        }
+
+        async function sendReply() {
+            const input = document.getElementById('reply-input');
+            const message = input.value.trim();
+            if (!message || !currentChatId) return;
+
+            try {
+                const res = await fetch('/api/chat/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: currentChatId, message })
+                });
+
+                if (res.ok) {
+                    input.value = '';
+                    loadChat(currentChatId, currentUserEl.innerText.replace('Chat with ', ''));
+                } else {
+                    const data = await res.json();
+                    alert(data.error || 'Failed to send message');
+                }
+            } catch (err) {
+                console.error('Error sending reply:', err);
+                alert('Connection error');
+            }
+        }
+
+        async function startChat() {
+            if (!currentChatId) return;
+            try {
+                const res = await fetch('/api/chat/mode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: currentChatId, mode: 'agen' })
+                });
+                if (res.ok) updateChatUI('agen');
+            } catch (err) {
+                console.error('Error starting chat:', err);
+            }
+        }
+
+        async function closeToBot() {
+            if (!currentChatId) return;
+            try {
+                const res = await fetch('/api/chat/mode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: currentChatId, mode: 'bot' })
+                });
+                if (res.ok) updateChatUI('bot');
+            } catch (err) {
+                console.error('Error closing chat:', err);
+            }
+        }
+
+        loadUsers();
+        // Refresh user list every 30 seconds
+        setInterval(loadUsers, 30000);
+        setInterval(async () => loadChat(currentChatId, currentUserEl.innerText.replace('Chat with ', '')), 30000);
+    </script>
+</body>
+
+</html>

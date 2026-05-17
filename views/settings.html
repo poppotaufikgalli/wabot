@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - WABOT</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-info h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .setting-info p {
+            margin: 0.25rem 0 0;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        select, input {
+            padding: 0.6rem 1rem;
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            font-family: inherit;
+        }
+
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn:hover {
+            filter: brightness(1.1);
+        }
+
+        .status-msg {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 10px;
+            display: none;
+            text-align: center;
+        }
+
+        .status-success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/" class="nav-brand">WABOT Dashboard</a>
+        <div class="nav-links">
+            <a href="/">QR Login</a>
+            <a href="/history.html">History</a>
+            <a href="/users">Users</a>
+            <a href="/settings" class="active">Settings</a>
+            <a href="/logout" class="logout-link">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <div class="container">
+            <header>
+                <h1>System Settings</h1>
+                <p style="color: var(--text-dim);">Configure your WhatsApp Bot behavior</p>
+            </header>
+
+            <div class="card">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h3>Bot Response Mode</h3>
+                        <p>Choose how the bot responds to incoming messages</p>
+                    </div>
+                    <select id="bot_mode" onchange="updateSetting('bot_mode', this.value)">
+                        <option value="manual">Bot Manual (Rules Based)</option>
+                        <option value="ai">Bot AI (Generative)</option>
+                    </select>
+                </div>
+
+                <div id="status-msg" class="status-msg status-success">
+                    Setting updated successfully!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchSettings() {
+            const response = await fetch('/api/settings');
+            const settings = await response.json();
+            if (settings.bot_mode) {
+                document.getElementById('bot_mode').value = settings.bot_mode;
+            }
+        }
+
+        async function updateSetting(key, value) {
+            try {
+                const response = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key, value })
+                });
+                
+                if (response.ok) {
+                    showStatus();
+                } else {
+                    alert('Failed to update setting');
+                }
+            } catch (err) {
+                console.error('Error updating setting:', err);
+            }
+        }
+
+        function showStatus() {
+            const msg = document.getElementById('status-msg');
+            msg.style.display = 'block';
+            setTimeout(() => {
+                msg.style.display = 'none';
+            }, 3000);
+        }
+
+        fetchSettings();
+    </script>
+</body>
+</html>

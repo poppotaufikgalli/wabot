@@ -1,0 +1,224 @@
+const fs = require('fs');
+const path = require('path');
+
+// In-memory session tracking
+const sessions = {};
+const TIMEOUT_DURATION = 60000; // 1 minute in milliseconds
+const HISTORY_DIR = path.join(__dirname, '../history');
+
+// Ensure history directory exists
+if (!fs.existsSync(HISTORY_DIR)) {
+    fs.mkdirSync(HISTORY_DIR, { recursive: true });
+}
+
+/**
+ * Saves conversation to a JSON file
+ */
+// function saveHistory(userId, role, content, notelp = '', pushname = 'bot') {
+//     const d = new Date();
+//     const historyDir = path.join(HISTORY_DIR, d.getFullYear().toString(), (d.getMonth() + 1).toString(), d.getDate().toString());
+//     if (!fs.existsSync(historyDir)) {
+//         fs.mkdirSync(historyDir, { recursive: true });
+//     }
+//     const filePath = path.join(historyDir, `${userId.replace(/[:@.]/g, '_')}.json`);
+//     let history = [];
+
+//     if (fs.existsSync(filePath)) {
+//         try {
+//             history = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+//         } catch (e) {
+//             console.error('Error reading history file:', e);
+//         }
+//     }
+
+//     history.push({
+//         timestamp: new Date().toISOString(),
+//         role: role, // 'user' or 'bot'
+//         content: content,
+//         notelp: notelp,
+//         pushname: pushname
+//     });
+
+//     // Keep only last 50 messages to prevent file bloat
+//     if (history.length > 50) history.shift();
+
+//     fs.writeFileSync(filePath, JSON.stringify(history, null, 2));
+// }
+
+/**
+ * Sends a message and logs it to history
+ */
+async function sendMessageWithLog(client, to, content, options = {}) {
+    await client.sendMessage(to, content, options);
+    saveHistory(to, 'bot', content);
+}
+
+async function processMsg(msg, client) {
+    const chat = await msg.getChat();
+    const contact = await msg.getContact();
+    const userId = msg.from;
+    const pushname = contact.pushname != undefined ? 'kak *' + contact.pushname + '*' : 'Pelanggan';
+
+    // Ignore group messages and status updates
+    if (chat.isGroup || userId === 'status@broadcast') return;
+
+    const keyword = msg.body.toLowerCase().trim();
+    saveHistory(userId, 'user', msg.body, contact?.id?.user, contact?.pushname);
+
+    // Session logic
+    if (!sessions[userId] || sessions[userId].status === 'closed') {
+        // Initialize new session
+        sessions[userId] = {
+            status: 'active',
+            timeoutId: null,
+            lastMessage: keyword,
+            mode: 'bot' // 'bot' or 'agent'
+        };
+
+        const welcomeMessage = `Halo ${pushname}, Selamat datang di *Bitfast!* Connecting You to the World : The Bitfast Journey.
+Agar kami bisa membantu Anda dengan cepat, silakan pilih menu di bawah ini (Cukup ketik 1, 2, atau 3):
+
+1. Tentang Layanan Kami (Cek detail paket dan harga)
+2. Ingin Berlangganan? (Daftar dan Pasang Baru)
+3. Ada Gangguan Jaringan? (Laporkan masalah teknis)
+
+Terima kasih!`;
+
+        await sendMessageWithLog(client, userId, welcomeMessage);
+    } else {
+        // If already in agent mode, just log and reset timeout without replying
+        if (sessions[userId].mode === 'agent') {
+            console.log(`User ${userId} is in AGENT mode. Skipping auto-reply.`);
+
+            // Reset timeout
+            if (sessions[userId].timeoutId) clearTimeout(sessions[userId].timeoutId);
+            sessions[userId].timeoutId = setTimeout(async () => {
+                const closingMessage = `Terima kasih ${pushname} telah menghubungi *Bitfast*. 
+Percakapan dengan Agen telah berakhir karena tidak ada aktivitas selama 1 menit. 
+Jika butuh bantuan lagi, jangan ragu untuk mengirim pesan kembali ya!`;
+                await sendMessageWithLog(client, userId, closingMessage);
+                sessions[userId].status = 'closed';
+                sessions[userId].mode = 'bot';
+                sessions[userId].timeoutId = null;
+            }, TIMEOUT_DURATION);
+
+            return;
+        }
+
+        // Duplicate message check
+        if (sessions[userId].lastMessage === keyword && sessions[userId].status === 'active') {
+            await sendMessageWithLog(client, userId, 'Maaf kak, pesan yang kakak kirimkan sama dengan pesan sebelumnya. Silakan kirimkan pesan yang lain atau pilihan lain ya! 🙏');
+
+            // Still reset timeout
+            if (sessions[userId].timeoutId) clearTimeout(sessions[userId].timeoutId);
+            sessions[userId].timeoutId = setTimeout(async () => {
+                const closingMessage = `Terima kasih ${pushname} telah menghubungi *Bitfast*. 
+Percakapan ini kami tutup karena tidak ada aktivitas selama 1 menit. 
+Jika butuh bantuan lagi, jangan ragu untuk mengirim pesan kembali ya!`;
+                await sendMessageWithLog(client, userId, closingMessage);
+                sessions[userId].status = 'closed';
+                sessions[userId].timeoutId = null;
+            }, TIMEOUT_DURATION);
+
+            return;
+        }
+
+        // Process active session
+        sessions[userId].lastMessage = keyword;
+
+        if (keyword.includes('menu') || keyword === '0') {
+            const menuMessage = `Silakan pilih menu di bawah ini (Cukup ketik 1, 2, atau 3):
+
+1. Tentang Layanan Kami (Cek detail paket dan harga)
+2. Ingin Berlangganan? (Daftar dan Pasang Baru)
+3. Ada Gangguan Jaringan? (Laporkan masalah teknis)`;
+            await sendMessageWithLog(client, userId, menuMessage);
+        } else if (keyword === 'agen') {
+            sessions[userId].mode = 'agent';
+            await sendMessageWithLog(client, userId, `Baik ${pushname}, mohon tunggu sebentar ya. Saya akan menghubungkan kakak dengan Agen Live Chat kami. 
+
+Silakan sampaikan kendala atau pertanyaan kakak di sini. Bot akan non-aktif sementara sampai sesi berakhir.`);
+        } else if (keyword === '1') {
+            await sendMessageWithLog(client, userId, `Bitfast adalah perusahaan yang bergerak dibidang internet service provider.  
+•  Menyediakan layanan internet cepat, stabil, dan terjangkau bagi masyarakat.
+•  Memberikan koneksi internet berkualitas dengan harga kompetitif.
+•  Menjangkau daerah yang masih terbatas akses internetnya.
+•  Menyediakan layanan pelanggan yang responsif dan handal.
+
+Ketik 0 untuk kembali`);
+        } else if (keyword === '2') {
+            await sendMessageWithLog(client, userId, `Pilih Paket Internet Bitfast Terbaik Anda! 
+
+*A. RUMAHAN BASIC (Rp.160.000/bln)*
+Kecepatan: 20 Mbps
+Keunggulan: Internet Stabil, Kuota Unlimited!
+Free Instalasi
+
+*B. RUMAHAN MEDIUM (Rp.180.000/bln)*
+Kecepatan: 30 Mbps
+Keunggulan: Internet Stabil, Kuota Unlimited!
+Free Instalasi
+
+*C. RUMAHAN PREMIUM (Rp.210.000/bln)*
+Kecepatan: 50 Mbps
+Keunggulan: Internet Stabil, Kuota Unlimited!
+Free Instalasi
+
+*D. BISNIS STANDARD (Rp. 520.000/bln)*
+Kecepatan: 300 Mbps
+Keunggulan: Internet Stabil, Kuota Unlimited!
+Free Instalasi
+
+Ketik A, B, C, atau D untuk detail lebih lanjut. Ketik 0 untuk Kembali ke Menu Utama.`);
+        } else if (keyword === '3') {
+            await sendMessageWithLog(client, userId, `Agar internet segera kembali lancar, yuk lengkapi data ini sekarang:
+
+Nomor ID Pelanggan :
+Nomor HP Aktif:
+Alamat Lengkap: 
+Info Gangguan : (sertakan warna lampu indikator pada modem/lampirkan foto modem)
+
+Ketik 0 jika ada yang ingin ditanyakan atau ingin Kembali`);
+        } else if (['a', 'b', 'c', 'd'].includes(keyword)) {
+            await sendMessageWithLog(client, userId, `Yeay! Langkah Terakhir!
+Agar internet Bitfast bisa segera terpasang di tempat Anda, yuk lengkapi data ini sekarang:
+
+Nama Anda:
+Nomor HP Aktif:
+Alamat Lengkap: (Sertakan RT/RW, Kecamatan)
+
+Ketik 0 jika ada yang ingin ditanyakan atau ingin Kembali`);
+        } else {
+            // if (needsEscalation(keyword)) {
+            //     await sendMessageWithLog(client, userId, 'Mohon maaf kak, untuk keluhan ini kami akan menghubungi kakak segera melalui telepon.');
+            // } else {
+            //     await sendMessageWithLog(client, userId, `Maaf ${pushname}, kami belum mengerti maksud kakak. Silakan ketik *Menu* untuk melihat pilihan layanan, atau ketik *agen* untuk berbicara dengan agen kami.`);
+            // }
+            await sendMessageWithLog(client, userId, `Maaf ${pushname}, kami belum mengerti maksud kakak. Silakan ketik *Menu* untuk melihat pilihan layanan, atau ketik *agen* untuk berbicara dengan agen kami.`);
+        }
+    }
+
+    // Reset session timeout
+    if (sessions[userId].timeoutId) {
+        clearTimeout(sessions[userId].timeoutId);
+    }
+
+    sessions[userId].timeoutId = setTimeout(async () => {
+        const closingMessage = `Terima kasih ${pushname} telah menghubungi *Bitfast*. 
+Percakapan ini kami tutup karena tidak ada aktivitas selama 1 menit. 
+Jika butuh bantuan lagi, jangan ragu untuk mengirim pesan kembali ya!`;
+        await sendMessageWithLog(client, userId, closingMessage);
+        sessions[userId].status = 'closed';
+        sessions[userId].timeoutId = null;
+    }, TIMEOUT_DURATION);
+}
+
+function needsEscalation(userMsg) {
+    const escalationKeywords = [
+        'tidak bisa', 'sudah coba', 'tetap mati', 'minta ganti',
+        'komplain berat', 'lapor ke', 'sudah 3 hari'
+    ];
+    return escalationKeywords.some(kw => userMsg.toLowerCase().includes(kw));
+}
+
+module.exports = { processMsg, needsEscalation };

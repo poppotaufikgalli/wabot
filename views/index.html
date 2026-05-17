@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Bot - QR Login</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        /* Any page specific styles */
+    </style>
+</head>
+
+<body>
+    <nav>
+        <a href="/" class="nav-brand">WABOT Dashboard</a>
+        <div class="nav-links">
+            <a href="/" class="active">QR Login</a>
+            <a href="/history.html">History</a>
+            <a href="/users">Users</a>
+            <a href="/settings">Settings</a>
+            <a href="/logout" class="logout-link">Logout</a>
+        </div>
+    </nav>
+    <div class="main-content">
+        <div class="container">
+            <header>
+                <h1>WA Bot <span class="accent">Gateway</span></h1>
+                <p class="subtitle">Securely connect your WhatsApp instance</p>
+            </header>
+
+            <main>
+                <div id="status-card" class="card">
+                    <div class="status-indicator" id="status-dot"></div>
+                    <span id="status-text">Connecting to server...</span>
+                </div>
+
+                <div class="qr-container">
+                    <div id="qr-placeholder" class="placeholder">
+                        <div class="spinner"></div>
+                        <p>Generating QR Code...</p>
+                    </div>
+                    <img id="qr-image" src="" alt="Scan Me" style="display: none;">
+
+                    <div id="success-overlay" class="overlay" style="display: none;">
+                        <div class="check-icon">✓</div>
+                        <h2>Authenticated</h2>
+                        <p>Your session is active and ready.</p>
+                    </div>
+                </div>
+
+                <div class="instructions">
+                    <h3>How to connect:</h3>
+                    <ol>
+                        <li>Open WhatsApp on your phone</li>
+                        <li>Tap <strong>Menu</strong> or <strong>Settings</strong> and select <strong>Linked
+                                Devices</strong></li>
+                        <li>Tap on <strong>Link a Device</strong></li>
+                        <li>Point your phone to this screen to capture the code</li>
+                    </ol>
+                </div>
+            </main>
+
+            <footer>
+                <p>&copy; 2026 Antigravity Bot System</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const qrImage = document.getElementById('qr-image');
+        const qrPlaceholder = document.getElementById('qr-placeholder');
+        const statusText = document.getElementById('status-text');
+        const statusDot = document.getElementById('status-dot');
+        const successOverlay = document.getElementById('success-overlay');
+
+        socket.on('connect', () => {
+            statusText.innerText = 'Connected. Waiting for QR...';
+            statusDot.className = 'status-indicator online';
+        });
+
+        socket.on('disconnect', () => {
+            statusText.innerText = 'Disconnected from server';
+            statusDot.className = 'status-indicator offline';
+        });
+
+        socket.on('qr', (data) => {
+            qrImage.src = data;
+            qrImage.style.display = 'block';
+            qrPlaceholder.style.display = 'none';
+            successOverlay.style.display = 'none';
+            statusText.innerText = 'Scan the QR code to login';
+        });
+
+        socket.on('authenticated', () => {
+            qrImage.style.display = 'none';
+            qrPlaceholder.style.display = 'none';
+            successOverlay.style.display = 'flex';
+            statusText.innerText = 'Authenticated successfully';
+            statusDot.className = 'status-indicator success';
+        });
+
+        socket.on('ready', () => {
+            statusText.innerText = 'WhatsApp is ready!';
+            statusDot.className = 'status-indicator success';
+        });
+
+        socket.on('message', (msg) => {
+            console.log('Server message:', msg);
+        });
+    </script>
+</body>
+
+</html>
