@@ -167,6 +167,14 @@ app.get('/settings', isAuthenticated, isAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'settings.html'));
 });
 
+app.get('/isp-answers', isAuthenticated, isAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'isp_answers.html'));
+});
+
+app.get('/ai-knowledge', isAuthenticated, isAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'ai_knowledge.html'));
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Create a new client instance
@@ -231,6 +239,84 @@ app.post('/api/settings', isAuthenticated, isAdmin, async (req, res) => {
         );
         await loadSettings();
         res.json({ success: true, settings: appSettings });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// API Endpoints for ISP Answers
+app.get('/api/isp-answers', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM isp_answers ORDER BY id DESC');
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/isp-answers', isAuthenticated, isAdmin, async (req, res) => {
+    const { keywords, answer } = req.body;
+    try {
+        await pool.query('INSERT INTO isp_answers (keywords, answer) VALUES (?, ?)', [keywords, answer]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/isp-answers/:id', isAuthenticated, isAdmin, async (req, res) => {
+    const { keywords, answer } = req.body;
+    try {
+        await pool.query('UPDATE isp_answers SET keywords = ?, answer = ? WHERE id = ?', [keywords, answer, req.params.id]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/isp-answers/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM isp_answers WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// API Endpoints for AI Knowledge Base
+app.get('/api/ai-knowledge', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM ai_knowledge ORDER BY id DESC');
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/ai-knowledge', isAuthenticated, isAdmin, async (req, res) => {
+    const { title, content } = req.body;
+    try {
+        await pool.query('INSERT INTO ai_knowledge (title, content) VALUES (?, ?)', [title, content]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/ai-knowledge/:id', isAuthenticated, isAdmin, async (req, res) => {
+    const { title, content } = req.body;
+    try {
+        await pool.query('UPDATE ai_knowledge SET title = ?, content = ? WHERE id = ?', [title, content, req.params.id]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/ai-knowledge/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM ai_knowledge WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

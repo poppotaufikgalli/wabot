@@ -14,7 +14,7 @@ async function initDB() {
     try {
         const connection = await pool.getConnection();
         console.log('Connected to MySQL database');
-        
+
         await connection.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -47,7 +47,26 @@ async function initDB() {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )
         `);
-        
+
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS isp_answers (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                keywords TEXT NOT NULL,
+                answer TEXT NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        `);
+
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS ai_knowledge (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                content TEXT NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        `);
+
+
         // Check if there is an admin user, if not create one
         const [rows] = await connection.query('SELECT * FROM users WHERE username = ?', ['admin']);
         if (rows.length === 0) {
@@ -66,7 +85,7 @@ async function initDB() {
             await connection.query('INSERT INTO settings (\`key\`, \`value\`) VALUES (?, ?)', ['bot_mode', 'manual']);
             console.log('Default bot_mode set to manual');
         }
-        
+
         connection.release();
     } catch (err) {
         console.error('Error connecting to MySQL:', err.message);

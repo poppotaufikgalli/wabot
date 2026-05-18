@@ -1,3 +1,5 @@
+const { pool } = require('./db.js');
+
 // In-memory session tracking
 // const sessions = {};
 const TIMEOUT_DURATION = 60000; // 1 minute in milliseconds
@@ -77,15 +79,45 @@ async function processMsg(userId, body, pushname, session) {
         } else if (keyword === 'agen') {
             session.mode = 'agent';
             return [`Baik ${pushname}, mohon tunggu sebentar ya. Saya akan menghubungkan kakak dengan Agen Live Chat kami.\n\nSilakan sampaikan kendala atau pertanyaan kakak di sini. Bot akan non-aktif sementara sampai sesi berakhir.`, session];
-        } else if (keyword === '1') {
-            return [`Bitfast adalah perusahaan yang bergerak dibidang internet service provider.  \n•  Menyediakan layanan internet cepat, stabil, dan terjangkau bagi masyarakat.\n•  Memberikan koneksi internet berkualitas dengan harga kompetitif.\n•  Menjangkau daerah yang masih terbatas akses internetnya.\n•  Menyediakan layanan pelanggan yang responsif dan handal.\n\nKetik 0 untuk kembali`, session];
-        } else if (keyword === '2') {
-            return [`Pilih Paket Internet Bitfast Terbaik Anda! \n\n*A. RUMAHAN BASIC (Rp.160.000/bln)*\nKecepatan: 20 Mbps\nKeunggulan: Internet Stabil, Kuota Unlimited!\nFree Instalasi\n\n*B. RUMAHAN MEDIUM (Rp.180.000/bln)*\nKecepatan: 30 Mbps\nKeunggulan: Internet Stabil, Kuota Unlimited!\nFree Instalasi\n\n*C. RUMAHAN PREMIUM (Rp.210.000/bln)*\nKecepatan: 50 Mbps\nKeunggulan: Internet Stabil, Kuota Unlimited!\nFree Instalasi\n\n*D. BISNIS STANDARD (Rp. 520.000/bln)*\nKecepatan: 300 Mbps\nKeunggulan: Internet Stabil, Kuota Unlimited!\nFree Instalasi\n\nKetik A, B, C, atau D untuk detail lebih lanjut. Ketik 0 untuk Kembali ke Menu Utama.`, session];
-        } else if (keyword === '3') {
-            return [`Agar internet segera kembali lancar, yuk lengkapi data ini sekarang:\nNomor ID Pelanggan :\nNomor HP Aktif:\nAlamat Lengkap: \nInfo Gangguan : (sertakan warna lampu indikator pada modem/lampirkan foto modem)\nKetik 0 jika ada yang ingin ditanyakan atau ingin Kembali`, session];
-        } else if (['a', 'b', 'c', 'd'].includes(keyword)) {
-            return [`Yeay! Langkah Terakhir!\nAgar internet Bitfast bisa segera terpasang di tempat Anda, yuk lengkapi data ini sekarang:\nNama Anda:\nNomor HP Aktif:\nAlamat Lengkap: (Sertakan RT/RW, Kecamatan)\nKetik 0 jika ada yang ingin ditanyakan atau ingin Kembali`, session];
         } else {
+            // Cek kata kunci dinamis dari database
+            try {
+                const [rows] = await pool.query('SELECT * FROM isp_answers');
+                for (const row of rows) {
+                    const dbKeywords = row.keywords;
+                    let isMatch = false;
+
+                    if (dbKeywords.includes('%')) {
+                        // LIKE matching misal: %halo%
+                        const regexStr = '^' + dbKeywords.replace(/%/g, '.*') + '$';
+                        try {
+                            const regex = new RegExp(regexStr, 'i');
+                            if (regex.test(keyword)) {
+                                isMatch = true;
+                            }
+                        } catch (e) { }
+                    } else if (dbKeywords.includes('"')) {
+                        // Multi-word matching misal: "halo","hai"
+                        const kwArray = dbKeywords.split(',').map(k => k.trim().replace(/^"|"$/g, '').toLowerCase());
+                        if (kwArray.includes(keyword)) {
+                            isMatch = true;
+                        }
+                    } else {
+                        // Exact match
+                        if (dbKeywords.toLowerCase() === keyword) {
+                            isMatch = true;
+                        }
+                    }
+
+                    if (isMatch) {
+                        let answer = `${row.answer}`;
+                        return [answer.replaceAll('\\n', '\n'), session];
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching ISP answers from DB:', err);
+            }
+
             return [`Maaf ${pushname}, kami belum mengerti maksud kakak. Silakan ketik *Menu* untuk melihat pilihan layanan, atau ketik *agen* untuk berbicara dengan agen kami.`, session];
         }
     }

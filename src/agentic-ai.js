@@ -1,5 +1,6 @@
 const Groq = require('groq-sdk');
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const { pool } = require('./db.js');
 
 const conversationHistory = new Map();
 
@@ -83,8 +84,20 @@ BATASAN PENTING:
 // Engine Groq (provider cadangan — 14.400 req/hari gratis)
 // ============================================================
 async function callGroq(history, userMessage) {
+    let dynamicKnowledge = '';
+    try {
+        const [rows] = await pool.query('SELECT * FROM ai_knowledge');
+        if (rows.length > 0) {
+            dynamicKnowledge = '\n\nTAMBAHAN PENGETAHUAN (KNOWLEDGE BASE DARI DATABASE):\n' + rows.map(r => `--- ${r.title} ---\n${r.content}`).join('\n\n');
+        }
+    } catch (err) {
+        console.error('Error fetching AI knowledge from DB:', err);
+    }
+
+    const fullContext = ISP_CONTEXT + dynamicKnowledge;
+
     const messages = [
-        { role: 'system', content: ISP_CONTEXT },
+        { role: 'system', content: fullContext },
         ...history.map(msg => ({
             role: msg.role === 'assistant' ? 'assistant' : 'user',
             content: msg.content,
