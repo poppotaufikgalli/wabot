@@ -9,6 +9,7 @@ async function processMsg(userId, body, pushname, session) {
     pushname = pushname != undefined ? 'kak *' + pushname + '*' : 'Pelanggan';
 
     const keyword = body.toLowerCase().trim();
+    console.log(session);
     // Session logic
     if (!session || session.status === 'closed') {
         // Initialize new session
@@ -78,7 +79,7 @@ async function processMsg(userId, body, pushname, session) {
             return [menuMessage, session];
         } else if (keyword === 'agen') {
             session.mode = 'agent';
-            return [`Baik ${pushname}, mohon tunggu sebentar ya. Saya akan menghubungkan kakak dengan Agen Live Chat kami.\n\nSilakan sampaikan kendala atau pertanyaan kakak di sini. Bot akan non-aktif sementara sampai sesi berakhir.`, session];
+            return [`Baik ${pushname}, silahkan berbicara dengan agen kami.\n\nSilakan sampaikan kendala atau pertanyaan kakak di sini. Bot akan non-aktif sementara sampai sesi berakhir.`, session];
         } else {
             // Cek kata kunci dinamis dari database
             try {

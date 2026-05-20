@@ -376,10 +376,10 @@ client.on('message', async msg => {
     // Initialize session if not exists
     if (!sessions[userId]) {
         sessions[userId] = {
-            status: 'active',
+            status: 'closed',
             timeoutId: null,
             lastMessage: '',
-            mode: 'bot'
+            mode: ''
         };
     }
 
