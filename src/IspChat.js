@@ -2,7 +2,7 @@ const { pool } = require('./db.js');
 
 // In-memory session tracking
 // const sessions = {};
-const TIMEOUT_DURATION = 60000; // 1 minute in milliseconds
+const TIMEOUT_DURATION = 300000; // 5 minute in milliseconds
 
 //async function processMsg(msg, client) {
 async function processMsg(userId, body, pushname, session) {

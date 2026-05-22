@@ -22,7 +22,7 @@ const { saveHistory } = require('./src/saveHistory.js');
 let mode = 'manual';
 // In-memory session tracking
 const sessions = {};
-const TIMEOUT_DURATION = 60000;
+const TIMEOUT_DURATION = 300000;
 
 // Settings cache
 let appSettings = { bot_mode: 'manual' };
