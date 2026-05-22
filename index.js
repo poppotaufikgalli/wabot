@@ -405,7 +405,7 @@ client.on('message', async msg => {
         if (sessions[userId].timeoutId) clearTimeout(sessions[userId].timeoutId);
 
         sessions[userId].timeoutId = setTimeout(async () => {
-            const closingMessage = `Terima kasih ${pushname} telah menghubungi *Bitfast*.\nPercakapan ini kami tutup karena tidak ada aktivitas selama 1 menit. \nJika butuh bantuan lagi, jangan ragu untuk mengirim pesan kembali ya!`;
+            const closingMessage = `Terima kasih ${pushname} telah menghubungi *Bitfast*.\nPercakapan ini kami tutup karena tidak ada aktivitas selama 5 menit. \nJika butuh bantuan lagi, jangan ragu untuk mengirim pesan kembali ya!`;
             //await sendMessageWithLog(client, userId, closingMessage);
             sessions[userId].status = 'closed';
             sessions[userId].timeoutId = null;
