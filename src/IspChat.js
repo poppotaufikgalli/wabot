@@ -77,7 +77,7 @@ async function processMsg(userId, body, pushname, session) {
             const menuMessage = `Silakan pilih menu di bawah ini (Cukup ketik 1, 2, atau 3):\n\n1. Tentang Layanan Kami (Cek detail paket dan harga)\n2. Ingin Berlangganan? (Daftar dan Pasang Baru)\n3. Ada Gangguan Jaringan? (Laporkan masalah teknis)`;
 
             return [menuMessage, session];
-        } else if (keyword === 'agen') {
+        } else if (keyword === 'agen' || keyword === '4') {
             session.mode = 'agent';
             return [`Baik ${pushname}, silahkan berbicara dengan agen kami.\n\nSilakan sampaikan kendala atau pertanyaan kakak di sini. Bot akan non-aktif sementara sampai sesi berakhir.`, session];
         } else {
