@@ -20,7 +20,7 @@ async function processMsg(userId, body, pushname, session) {
             mode: 'bot' // 'bot' or 'agent'
         };
 
-        const welcomeMessage = `Halo ${pushname}, Selamat datang di *Bitfast!* Connecting You to the World : The Bitfast Journey.\nAgar kami bisa membantu Anda dengan cepat, silakan pilih menu di bawah ini (Cukup ketik 1, 2, atau 3):\n\n1. Tentang Layanan Kami (Cek detail paket dan harga)\n2. Ingin Berlangganan? (Daftar dan Pasang Baru)\n3. Ada Gangguan Jaringan? (Laporkan masalah teknis)\n\nTerima kasih!`;
+        const welcomeMessage = `Halo ${pushname}, Selamat datang di *Bitfast!* Connecting You to the World : The Bitfast Journey.\nAgar kami bisa membantu Anda dengan cepat, silakan pilih menu di bawah ini (Cukup ketik 1, 2, 3, atau 4):\n\n1. Tentang Layanan Kami (Cek detail paket dan harga)\n2. Ingin Berlangganan? (Daftar dan Pasang Baru)\n3. Ada Gangguan Jaringan? (Laporkan masalah teknis)\n4. Berbicara dengan Agen kami\n\nTerima kasih!`;
 
         return [welcomeMessage, session];
     } else {
