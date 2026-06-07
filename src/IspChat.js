@@ -43,7 +43,7 @@ async function processMsg(userId, body, pushname, session) {
             //jika customer hanya mengetik 'bot' maka dianggap sebagai kembali menjadi chat bot
             if (keyword === 'bot' && session.lastMessage === keyword) {
                 session.mode = 'bot';
-                return ['Halo ' + pushname + ', bot kembali aktif loh..\n\nSelamat datang kembali di *Bitfast!* Connecting You to the World : The Bitfast Journey.\nAgar kami bisa membantu Anda dengan cepat, silakan pilih menu di bawah ini (Cukup ketik 1, 2, atau 3):\n\n1. Tentang Layanan Kami (Cek detail paket dan harga)\n2. Ingin Berlangganan? (Daftar dan Pasang Baru)\n3. Ada Gangguan Jaringan? (Laporkan masalah teknis)\n\nTerima kasih!', session];
+                return ['Halo ' + pushname + ', bot kembali aktif loh..\n\nSelamat datang kembali di *Bitfast!* Connecting You to the World : The Bitfast Journey.\nAgar kami bisa membantu Anda dengan cepat, silakan pilih menu di bawah ini (Cukup ketik 1, 2, 3 , atau 4):\n\n1. Tentang Layanan Kami (Cek detail paket dan harga)\n2. Ingin Berlangganan? (Daftar dan Pasang Baru)\n3. Ada Gangguan Jaringan? (Laporkan masalah teknis)\n4. Berbicara dengan Agen kami\n\nTerima kasih!', session];
             }
 
             //session.lastMessage = keyword;
@@ -74,7 +74,7 @@ async function processMsg(userId, body, pushname, session) {
         //session.lastMessage = keyword;
 
         if (keyword.includes('menu') || keyword === '0') {
-            const menuMessage = `Silakan pilih menu di bawah ini (Cukup ketik 1, 2, atau 3):\n\n1. Tentang Layanan Kami (Cek detail paket dan harga)\n2. Ingin Berlangganan? (Daftar dan Pasang Baru)\n3. Ada Gangguan Jaringan? (Laporkan masalah teknis)`;
+            const menuMessage = `Silakan pilih menu di bawah ini (Cukup ketik 1, 2, 3 atau 4):\n\n1. Tentang Layanan Kami (Cek detail paket dan harga)\n2. Ingin Berlangganan? (Daftar dan Pasang Baru)\n3. Ada Gangguan Jaringan? (Laporkan masalah teknis)\n4. Berbicara dengan Agen kami\n\nTerima kasih!`;
 
             return [menuMessage, session];
         } else if (keyword === 'agen' || keyword === '4') {
